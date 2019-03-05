@@ -8,33 +8,42 @@ var errorStatus = require('../utils/error_status');
 var config = require('../config/key');
 
 module.exports.signup = function (req, res) {
-    User.findOne({ email: req.body.email }).then(user => {
+    User.findOne({ email: req.body.data.email }).then(user => {
         if (user) {
             let obj = {
-                dataExist: true,
-                data: req.body.email,
-                success :false
+                emailExist: true,
+                success :false,
+                message :"Email already exist"
             }
-            return res.status(400).json(obj);
+            res.json(obj);
         }
         else {
             bcrypt.genSalt(saltRounds, function (err, salt) {
-                bcrypt.hash(req.body.password, salt, function (err, hash) {
+                bcrypt.hash(req.body.data.password, salt, function (err, hash) {
 
                     const newUser = new User({
-                        userName: req.body.userName,
-                        email: req.body.email,
+                        userName: req.body.data.userName,
+                        email: req.body.data.email,
                         password: hash,
-                        address: req.body.address,
-                        contactNo: req.body.contactNo,
-                        userType : req.body.userType
+                        address: req.body.data.address,
+                        contactNo: req.body.data.contactNo,
+                        userType : req.body.data.userType
                     });
                     newUser.save().then(user => { 
+                        let payload = { email: req.body.data.email };
+                        let jwt_token = jwt.sign(payload, config.secret, { expiresIn: 60000 });
                         let obj = {
-                            dataExist: false,
-                            data: user,
-                            success :true
+                            data : {                            
+                              userName: user.userName,
+                              userId: user._id,
+                              userType : user.userType,
+                              isLogin: true,
+                              token: jwt_token                            
+                            },
+                            success: true,
+                            message :"Successfully register"
                         }
+                      
                         res.json(obj)
                     }
                     ).catch(err => {
@@ -50,25 +59,23 @@ module.exports.signup = function (req, res) {
 // };
 
 exports.login = function (req, res) {
-    if (!!req.body.email && !!req.body.password) {
-        User.findOne({ email: req.body.email }).then(user => {
+    
+    if (!!req.body.data.email && !!req.body.data.password) {
+        User.findOne({ email: req.body.data.email }).then(user => {
             if (!user) {
                 let obj = {
                     emailExist: false,
                     success: false,
                     message :"Email does not exist"
                 }
-                return res.status(400).json(obj);
+                return res.json(obj);
             }
             else
             {
-                // let isValid = bcrypt.compare(req.body.password, user.password);
-                // console.log(isValid)
-                bcrypt.compare(req.body.password, user.password).then(isMatch => {
-                    console.log(isMatch)
+                bcrypt.compare(req.body.data.password, user.password).then(isMatch => {
                     if (isMatch) {
                       // Sign Token
-                      let payload = { email: req.body.email };
+                      let payload = { email: req.body.data.email };
                       let jwt_token = jwt.sign(payload, config.secret, { expiresIn: 60000 });
                       let obj = {
                           data : {                            
@@ -88,7 +95,7 @@ exports.login = function (req, res) {
                             success: false,
                             message :"Password does not match"
                         }
-                        return res.status(400).json(obj);
+                        return res.json(obj);
                     }
                    });
             }
