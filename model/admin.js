@@ -3,9 +3,10 @@ const upload = require('./multer');
 const Books = require('../schemas/books');
 const singleUpload = upload.single('image')
 const User =require('../schemas/users')
+
 module.exports.upload = function (req, res) {
   singleUpload(req, res, function (err, some) {
-    let requsetedData = JSON.parse(req.body.data);
+    // let requsetedData = JSON.parse(req.body.data);
     if (err) {
       res.status(401).json({
         success: false,
@@ -13,22 +14,20 @@ module.exports.upload = function (req, res) {
       });
     }
     else {
-      const newBooks = new Books({
-        title: requsetedData.bookName,
-        author: requsetedData.authorName,
-        year: requsetedData.year,
-        image: req.newfileName,
-        inStock: requsetedData.inStock,
-        description: requsetedData.description
-      });
-      newBooks.save().then(book => {
+      // const newBooks = new Books({
+      //   title: requsetedData.bookName,
+      //   author: requsetedData.authorName,
+      //   year: requsetedData.year,
+      //   image: req.newfileName,
+      //   inStock: requsetedData.inStock,
+      //   description: requsetedData.description
+      // });
+      // newBooks.save().then(book => {
         let obj = {
-          success: true,
-          message: "Book added successfully",
-          data: book
+          image:req.newfileName
         }
         res.json(obj)
-      })
+      // })
     }
   })
 }
